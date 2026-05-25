@@ -69,7 +69,22 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _force_utf8_stdio() -> None:
+    """Reconfigure stdout/stderr to UTF-8 so non-ASCII output (em-dashes,
+    Korean item text, etc.) does not crash on Windows consoles whose code
+    page is cp949 / cp1252. Errors are replaced rather than raised — a
+    garbled glyph beats a UnicodeEncodeError mid-command."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    _force_utf8_stdio()
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
