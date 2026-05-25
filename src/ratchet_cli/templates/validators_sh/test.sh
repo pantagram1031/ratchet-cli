@@ -14,7 +14,7 @@ if [ -f "package.json" ] && grep -q '"test"' package.json 2>/dev/null; then
   exec npm test --silent
 fi
 
-if command -v pytest >/dev/null 2>&1 && ls tests test 2>/dev/null | head -1 >/dev/null; then
+if command -v pytest >/dev/null 2>&1 && { [ -d tests ] || [ -d test ]; }; then
   exec pytest -q
 fi
 

@@ -21,11 +21,11 @@ if [ -f "pyproject.toml" ] && command -v ruff >/dev/null 2>&1; then
   exec ruff check .
 fi
 
-if command -v eslint >/dev/null 2>&1 && ls *.{js,ts,tsx,jsx} 2>/dev/null | head -1 >/dev/null; then
+if command -v eslint >/dev/null 2>&1 && { compgen -G "*.js" >/dev/null || compgen -G "*.ts" >/dev/null || compgen -G "*.tsx" >/dev/null || compgen -G "*.jsx" >/dev/null; }; then
   exec eslint .
 fi
 
-if command -v flake8 >/dev/null 2>&1 && ls *.py 2>/dev/null | head -1 >/dev/null; then
+if command -v flake8 >/dev/null 2>&1 && compgen -G "*.py" >/dev/null; then
   exec flake8 .
 fi
 
