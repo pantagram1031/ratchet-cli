@@ -11,7 +11,7 @@
 # the first one it finds. Edit or replace freely.
 
 set -u
-cd "${RATCHET_CWD:-$PWD}"
+cd "${RATCHET_PROJECT_ROOT:-$PWD}"
 
 if [ -f "package.json" ] && grep -q '"lint"' package.json 2>/dev/null; then
   exec npm run lint --silent

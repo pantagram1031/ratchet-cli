@@ -18,7 +18,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-cwd = Path(os.environ.get("RATCHET_CWD", os.getcwd()))
+cwd = Path(os.environ.get("RATCHET_PROJECT_ROOT", os.getcwd()))
 hurl_dir = Path(os.environ.get("HURL_DIR", "tests"))
 
 

@@ -12,7 +12,7 @@
 # Install: https://hurl.dev/
 
 set -u
-cd "${RATCHET_CWD:-$PWD}"
+cd "${RATCHET_PROJECT_ROOT:-$PWD}"
 
 HURL_DIR="${HURL_DIR:-tests}"
 

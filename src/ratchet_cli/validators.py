@@ -90,7 +90,14 @@ def _build_command(path: Path) -> tuple[list[str] | None, str]:
     return [str(path)], ""
 
 
-def run_one(path: Path, item: dict[str, Any] | None, cwd: Path) -> ValidatorResult:
+def run_one(
+    path: Path,
+    item: dict[str, Any] | None,
+    cwd: Path,
+    *,
+    phase: str = "submit",
+    item_index: int | None = None,
+) -> ValidatorResult:
     import time
 
     argv, skip_reason = _build_command(path)
@@ -106,10 +113,13 @@ def run_one(path: Path, item: dict[str, Any] | None, cwd: Path) -> ValidatorResu
         )
 
     env = os.environ.copy()
+    env["RATCHET_PROJECT_ROOT"] = str(cwd)
+    env["RATCHET_PHASE"] = phase
     if item is not None:
+        env["RATCHET_ITEM"] = str(item.get("text", ""))
         env["RATCHET_ITEM_ID"] = str(item.get("id", ""))
-        env["RATCHET_ITEM_TEXT"] = str(item.get("text", ""))
-    env["RATCHET_CWD"] = str(cwd)
+        if item_index is not None:
+            env["RATCHET_ITEM_INDEX"] = str(item_index)
 
     started = time.monotonic()
     try:
@@ -148,8 +158,18 @@ def run_one(path: Path, item: dict[str, Any] | None, cwd: Path) -> ValidatorResu
         )
 
 
-def run_all(validators_dir: Path, item: dict[str, Any] | None, cwd: Path) -> list[ValidatorResult]:
-    return [run_one(p, item, cwd) for p in discover(validators_dir)]
+def run_all(
+    validators_dir: Path,
+    item: dict[str, Any] | None,
+    cwd: Path,
+    *,
+    phase: str = "submit",
+    item_index: int | None = None,
+) -> list[ValidatorResult]:
+    return [
+        run_one(p, item, cwd, phase=phase, item_index=item_index)
+        for p in discover(validators_dir)
+    ]
 
 
 def summarize(results: list[ValidatorResult]) -> dict[str, int]:

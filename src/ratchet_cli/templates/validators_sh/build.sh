@@ -8,7 +8,7 @@
 #   78 = skipped (no build tool detected — could not verify)
 
 set -u
-cd "${RATCHET_CWD:-$PWD}"
+cd "${RATCHET_PROJECT_ROOT:-$PWD}"
 
 if [ -f "package.json" ] && grep -q '"build"' package.json 2>/dev/null; then
   exec npm run build --silent

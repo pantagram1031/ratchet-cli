@@ -18,7 +18,7 @@ TAGS = {"pass": "PASS", "fail": "FAIL", "warn": "WARN", "skip": "SKIP", "error":
 def run(args: argparse.Namespace) -> int:
     ratchet_dir = require_ratchet_dir()
     validators_dir = ratchet_dir / VALIDATORS_DIRNAME
-    results = run_all(validators_dir, item=None, cwd=ratchet_dir.parent)
+    results = run_all(validators_dir, item=None, cwd=ratchet_dir.parent, phase="validate")
 
     if not results:
         sys.stderr.write(

@@ -84,7 +84,17 @@ def run(args: argparse.Namespace) -> int:
                 "warning: --skip-validators given. this defeats the ratchet and is recorded.\n"
             )
         else:
-            results = run_all(validators_dir, item, cwd=ratchet_dir.parent)
+            item_index = next(
+                (i for i, it in enumerate(state.items) if it["id"] == item["id"]),
+                None,
+            )
+            results = run_all(
+                validators_dir,
+                item,
+                cwd=ratchet_dir.parent,
+                phase="submit",
+                item_index=item_index,
+            )
 
         summary = summarize(results)
         if results:
