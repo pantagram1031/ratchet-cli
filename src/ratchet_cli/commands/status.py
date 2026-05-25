@@ -61,8 +61,8 @@ def run(args: argparse.Namespace) -> int:
             "submit will pass trivially.\n"
         )
 
-    submits = [r for r in _tail_jsonl(ratchet_dir / HISTORY_FILENAME, 200)
-               if r.get("cmd") == "submit"]
+    submits = [r for r in _tail_jsonl(ratchet_dir / HISTORY_FILENAME, 500)
+               if r.get("cmd") == "submit_done"]
     total = len(submits)
     passed = sum(1 for r in submits if r.get("passed"))
     failed = total - passed
@@ -78,5 +78,5 @@ def run(args: argparse.Namespace) -> int:
                 f"{s.get('pass',0)}p/{s.get('fail',0)}f/"
                 f"{s.get('warn',0)}w/{s.get('skip',0)}s/{s.get('error',0)}e"
             )
-            print(f"    {mark} [{r.get('id')}] {r.get('text','')[:60]}  ({counts})")
+            print(f"    {mark} [{r.get('item_id')}] {r.get('item','')[:60]}  ({counts})")
     return 0

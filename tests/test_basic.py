@@ -90,15 +90,25 @@ class TestConfig(unittest.TestCase):
         c = Config()
         self.assertTrue(c.require_all_pass)
         self.assertFalse(c.warning_blocks)
-        self.assertFalse(c.allow_skipped)  # opt-in, never default
+        self.assertFalse(c.allow_skipped)        # opt-in, never default
+        self.assertTrue(c.require_validators)    # block trivial false-pass
 
     def test_save_load_roundtrip(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "config.json"
-            Config(allow_skipped=True, warning_blocks=True).save(p)
+            Config(allow_skipped=True, warning_blocks=True, require_validators=False).save(p)
             loaded = Config.load(p)
             self.assertTrue(loaded.allow_skipped)
             self.assertTrue(loaded.warning_blocks)
+            self.assertFalse(loaded.require_validators)
+
+    def test_load_missing_require_validators_defaults_true(self) -> None:
+        """Older config.json files predating require_validators must still
+        get the safe default (true) on load."""
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "config.json"
+            p.write_text('{"version": 1, "require_all_pass": true}')
+            self.assertTrue(Config.load(p).require_validators)
 
 
 class TestValidatorResultStatus(unittest.TestCase):

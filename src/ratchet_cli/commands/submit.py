@@ -18,6 +18,15 @@ from ratchet_cli.state import (
 )
 from ratchet_cli.validators import run_all, summarize
 
+STDOUT_TAIL_BYTES = 2000
+
+
+def _tail(s: str | None, n: int = STDOUT_TAIL_BYTES) -> str:
+    s = s or ""
+    if len(s) <= n:
+        return s
+    return "...(truncated)...\n" + s[-n:]
+
 
 STATUS_TAGS = {
     "pass": "PASS",
@@ -114,22 +123,46 @@ def run(args: argparse.Namespace) -> int:
             and not config.allow_skipped
         )
         blocking_warn = config.warning_blocks and summary["warn"] > 0
-        passed = not (blocking_fail or blocking_error or blocking_skip or blocking_warn)
+        blocking_empty = (
+            not args.skip_validators
+            and not results
+            and config.require_validators
+        )
+        passed = not (
+            blocking_fail or blocking_error or blocking_skip
+            or blocking_warn or blocking_empty
+        )
 
-        history_payload = {
-            "cmd": "submit",
-            "id": item["id"],
-            "text": item["text"],
+        # History schema (jsonl):
+        #   one "submit" record per validator run, plus one "submit_done"
+        #   summary record per submit. All records in a submit share the
+        #   same `submit_id` for correlation.
+        submit_id = now_iso()
+        for r in results:
+            append_history(ratchet_dir, {
+                "cmd": "submit",
+                "submit_id": submit_id,
+                "item": item["text"],
+                "item_id": item["id"],
+                "item_index": item_index,
+                "validator": r.name,
+                "exit": r.exit_code,
+                "status": r.status,
+                "duration_ms": r.duration_ms,
+                "stdout_tail": _tail(r.stdout),
+                "stderr_tail": _tail(r.stderr),
+            })
+        append_history(ratchet_dir, {
+            "cmd": "submit_done",
+            "submit_id": submit_id,
+            "item": item["text"],
+            "item_id": item["id"],
+            "item_index": item_index,
             "passed": passed,
             "skipped_validators": bool(args.skip_validators),
             "note": args.note,
             "summary": summary,
-            "results": [
-                {"name": r.name, "status": r.status, "exit": r.exit_code, "ms": r.duration_ms}
-                for r in results
-            ],
-        }
-        append_history(ratchet_dir, history_payload)
+        })
 
         if passed:
             item["status"] = "done"
@@ -150,6 +183,12 @@ def run(args: argparse.Namespace) -> int:
         _print_failure_excerpts(results)
 
         reasons = []
+        if blocking_empty:
+            reasons.append(
+                "0 validators discovered — refusing to falsely pass. "
+                "add a validator under .ratchet/validators/, "
+                "or set require_validators=false in config.json"
+            )
         if blocking_fail:
             reasons.append(f"{summary['fail']} fail")
         if blocking_error:
