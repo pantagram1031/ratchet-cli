@@ -19,15 +19,19 @@ from ratchet_cli.state import (
 from ratchet_cli.validators import run_all, summarize
 
 
+STATUS_TAGS = {
+    "pass": "PASS",
+    "fail": "FAIL",
+    "warn": "WARN",
+    "skip": "SKIP",
+    "error": "ERROR",
+}
+
+
 def _format_results(results) -> str:
     lines = []
     for r in results:
-        tag = {
-            "pass": "PASS",
-            "fail": "FAIL",
-            "warn": "WARN",
-            "skip": "SKIP",
-        }[r.status]
+        tag = STATUS_TAGS[r.status]
         suffix = f"  ({r.skip_reason})" if r.skipped and r.skip_reason else ""
         lines.append(f"  [{tag}] {r.name}  exit={r.exit_code}  {r.duration_ms}ms{suffix}")
     return "\n".join(lines)
@@ -35,7 +39,7 @@ def _format_results(results) -> str:
 
 def _print_failure_excerpts(results, max_lines: int = 12) -> None:
     for r in results:
-        if r.status not in ("fail", "warn"):
+        if r.status not in ("fail", "warn", "skip", "error"):
             continue
         body = (r.stdout + r.stderr).strip()
         if not body:
@@ -83,15 +87,24 @@ def run(args: argparse.Namespace) -> int:
             results = run_all(validators_dir, item, cwd=ratchet_dir.parent)
 
         summary = summarize(results)
-        print(_format_results(results) if results else "  (no validators present)")
+        if results:
+            print(_format_results(results))
+        else:
+            print("  (no validators present — submit will pass trivially; add some to .ratchet/validators/)")
         print(
             f"summary: {summary['pass']} pass, {summary['fail']} fail, "
-            f"{summary['warn']} warn, {summary['skip']} skip"
+            f"{summary['warn']} warn, {summary['skip']} skip, {summary['error']} error"
         )
 
         blocking_fail = summary["fail"] > 0
+        blocking_error = summary["error"] > 0
+        blocking_skip = (
+            summary["skip"] > 0
+            and config.require_all_pass
+            and not config.allow_skipped
+        )
         blocking_warn = config.warning_blocks and summary["warn"] > 0
-        passed = not blocking_fail and not blocking_warn
+        passed = not (blocking_fail or blocking_error or blocking_skip or blocking_warn)
 
         history_payload = {
             "cmd": "submit",
@@ -125,8 +138,23 @@ def run(args: argparse.Namespace) -> int:
         # failure path — keep current locked so `next` returns the same item
         state.save(state_path)
         _print_failure_excerpts(results)
+
+        reasons = []
+        if blocking_fail:
+            reasons.append(f"{summary['fail']} fail")
+        if blocking_error:
+            reasons.append(f"{summary['error']} error (validator broken?)")
+        if blocking_skip:
+            reasons.append(
+                f"{summary['skip']} skip — validators could not verify "
+                f"(install the missing tools, or set allow_skipped=true in config.json)"
+            )
+        if blocking_warn:
+            reasons.append(f"{summary['warn']} warn (warning_blocks=true)")
+
         sys.stderr.write(
-            "\nblocked: fix the failures above, then re-run `ratchet submit`.\n"
+            "\nblocked: " + "; ".join(reasons) + "\n"
+            "fix the issues above, then re-run `ratchet submit`.\n"
             "`ratchet next` will re-print the same item until it passes.\n"
         )
         return 1

@@ -1,4 +1,11 @@
-"""ratchet validator: build (Python fallback)."""
+"""ratchet validator: build (Python fallback).
+
+Exit codes:
+    0  = pass (build succeeded)
+    1  = fail
+    2  = warning
+    78 = skipped (no build tool detected — could not verify)
+"""
 from __future__ import annotations
 
 import os
@@ -30,9 +37,9 @@ def main() -> int:
     if (cwd / "Cargo.toml").exists() and shutil.which("cargo"):
         return _run(["cargo", "build", "--quiet"])
 
-    print("build: no known build tool detected — treating as pass.", file=sys.stderr)
-    print("edit .ratchet/validators/build.py to wire your build command.", file=sys.stderr)
-    return 0
+    print("SKIP: build: no build tool detected (npm-build/python/go/cargo).", file=sys.stderr)
+    print("SKIP: install one or edit .ratchet/validators/build.py to wire your build command.", file=sys.stderr)
+    return 78
 
 
 if __name__ == "__main__":

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # ratchet validator: lint
 #
-# Exit codes:  0 = pass, 2 = warning, anything else = fail
+# Exit codes:
+#   0  = pass (lint ran and passed)
+#   1  = fail
+#   2  = warning
+#   78 = skipped (no linter detected — could not verify)
 #
 # Auto-detects common linters in the project root ($RATCHET_CWD) and runs
-# the first one it finds. Edit or replace freely — your project may need a
-# specific linter invocation.
+# the first one it finds. Edit or replace freely.
 
 set -u
 cd "${RATCHET_CWD:-$PWD}"
@@ -30,6 +33,6 @@ if command -v golangci-lint >/dev/null 2>&1 && [ -f "go.mod" ]; then
   exec golangci-lint run
 fi
 
-echo "lint: no known linter detected — treating as pass." >&2
-echo "edit .ratchet/validators/lint.sh to wire your linter." >&2
-exit 0
+echo "SKIP: lint: no linter detected (ruff/eslint/flake8/golangci-lint/npm-lint)." >&2
+echo "SKIP: install one or edit .ratchet/validators/lint.sh to wire your linter." >&2
+exit 78

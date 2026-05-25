@@ -1,4 +1,11 @@
-"""ratchet validator: test (Python fallback)."""
+"""ratchet validator: test (Python fallback).
+
+Exit codes:
+    0  = pass (tests ran and passed)
+    1  = fail
+    2  = warning
+    78 = skipped (no test runner detected — could not verify)
+"""
 from __future__ import annotations
 
 import os
@@ -21,7 +28,7 @@ def main() -> int:
         if npm:
             return _run([npm, "test", "--silent"])
 
-    if shutil.which("pytest") and (any((cwd / "tests").glob("**/*")) if (cwd / "tests").exists() else False):
+    if shutil.which("pytest") and (cwd / "tests").exists():
         return _run(["pytest", "-q"])
 
     if shutil.which("go") and (cwd / "go.mod").exists():
@@ -30,9 +37,9 @@ def main() -> int:
     if (cwd / "Cargo.toml").exists() and shutil.which("cargo"):
         return _run(["cargo", "test", "--quiet"])
 
-    print("test: no known test runner detected — treating as pass.", file=sys.stderr)
-    print("edit .ratchet/validators/test.py to wire your test command.", file=sys.stderr)
-    return 0
+    print("SKIP: test: no test runner detected (pytest/npm-test/go-test/cargo-test).", file=sys.stderr)
+    print("SKIP: install one or edit .ratchet/validators/test.py to wire your test command.", file=sys.stderr)
+    return 78
 
 
 if __name__ == "__main__":

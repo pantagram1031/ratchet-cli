@@ -12,20 +12,29 @@ This means: a process killed between `next` and `submit` resumes by re-running
 from __future__ import annotations
 
 import argparse
+import sys
 
 from ratchet_cli.state import (
     FileLock,
     LOCK_FILENAME,
     STATE_FILENAME,
+    VALIDATORS_DIRNAME,
     State,
     append_history,
     require_ratchet_dir,
 )
+from ratchet_cli.validators import discover
 
 
 def run(args: argparse.Namespace) -> int:
     ratchet_dir = require_ratchet_dir()
     state_path = ratchet_dir / STATE_FILENAME
+
+    if not discover(ratchet_dir / VALIDATORS_DIRNAME):
+        sys.stderr.write(
+            "WARN: no validators registered in .ratchet/validators/ — "
+            "submit will pass trivially.\n"
+        )
 
     with FileLock(ratchet_dir / LOCK_FILENAME):
         state = State.load(state_path)

@@ -1,7 +1,10 @@
 """ratchet validator: lint (Python fallback for systems without bash).
 
-Exit codes: 0 = pass, 2 = warning, anything else = fail.
-Detects common linters and shells out to the first match.
+Exit codes:
+    0  = pass (lint ran and passed)
+    1  = fail
+    2  = warning
+    78 = skipped (no linter detected — could not verify)
 """
 from __future__ import annotations
 
@@ -34,9 +37,9 @@ def main() -> int:
     if shutil.which("golangci-lint") and (cwd / "go.mod").exists():
         return _run(["golangci-lint", "run"])
 
-    print("lint: no known linter detected — treating as pass.", file=sys.stderr)
-    print("edit .ratchet/validators/lint.py to wire your linter.", file=sys.stderr)
-    return 0
+    print("SKIP: lint: no linter detected (ruff/eslint/flake8/golangci-lint/npm-lint).", file=sys.stderr)
+    print("SKIP: install one or edit .ratchet/validators/lint.py to wire your linter.", file=sys.stderr)
+    return 78
 
 
 if __name__ == "__main__":

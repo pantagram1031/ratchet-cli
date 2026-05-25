@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # ratchet validator: build
 #
-# Exit codes:  0 = pass, 2 = warning, anything else = fail
-#
-# Detects common build tools. Replace with your exact build invocation.
+# Exit codes:
+#   0  = pass (build succeeded)
+#   1  = fail
+#   2  = warning
+#   78 = skipped (no build tool detected — could not verify)
 
 set -u
 cd "${RATCHET_CWD:-$PWD}"
@@ -24,6 +26,6 @@ if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
   exec cargo build --quiet
 fi
 
-echo "build: no known build tool detected — treating as pass." >&2
-echo "edit .ratchet/validators/build.sh to wire your build command." >&2
-exit 0
+echo "SKIP: build: no build tool detected (npm-build/python/go/cargo)." >&2
+echo "SKIP: install one or edit .ratchet/validators/build.sh to wire your build command." >&2
+exit 78

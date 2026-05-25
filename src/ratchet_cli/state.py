@@ -110,6 +110,7 @@ class Config:
     version: int = STATE_VERSION
     require_all_pass: bool = True   # all validators must pass to submit
     warning_blocks: bool = False    # exit=2 (warning) blocks submit?
+    allow_skipped: bool = False     # treat exit=78 (skipped) as acceptable?
 
     @classmethod
     def load(cls, path: Path) -> "Config":
@@ -120,6 +121,7 @@ class Config:
             version=data.get("version", STATE_VERSION),
             require_all_pass=data.get("require_all_pass", True),
             warning_blocks=data.get("warning_blocks", False),
+            allow_skipped=data.get("allow_skipped", False),
         )
 
     def save(self, path: Path) -> None:

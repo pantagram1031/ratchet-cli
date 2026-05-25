@@ -2,13 +2,20 @@
 
 A validator is any executable file in `.ratchet/validators/`. Exit code is the
 only thing that matters:
-    0 → pass
-    2 → warning (does not block submit by default)
-    other → fail
+
+    0   → pass     (validator actually ran and the check succeeded)
+    1   → fail
+    2   → warning  (counted but does not block submit by default)
+    78  → skipped  (validator ran but could not verify — e.g. tool missing)
+    *   → error    (validator itself is broken or could not be invoked)
+
+The skipped class is load-bearing: it lets a validator honestly say "I cannot
+verify this" instead of returning a false pass. By default, a skipped result
+blocks submit (see Config.allow_skipped).
 
 Discovery rules:
     * .py files run with `sys.executable` (always)
-    * .sh files run with `bash` if available, else skipped with a stderr note
+    * .sh files run with `bash` if available, else marked as skip with stderr note
     * any other executable file (chmod +x) runs directly
     * dotfiles and files starting with `_` are ignored
 """
@@ -36,13 +43,15 @@ class ValidatorResult:
 
     @property
     def status(self) -> str:
-        if self.skipped:
+        if self.skipped or self.exit_code == 78:
             return "skip"
         if self.exit_code == 0:
             return "pass"
+        if self.exit_code == 1:
+            return "fail"
         if self.exit_code == 2:
             return "warn"
-        return "fail"
+        return "error"
 
 
 def _is_ignored(name: str) -> bool:
@@ -88,9 +97,9 @@ def run_one(path: Path, item: dict[str, Any] | None, cwd: Path) -> ValidatorResu
     if argv is None:
         return ValidatorResult(
             name=path.name,
-            exit_code=-1,
+            exit_code=78,
             stdout="",
-            stderr="",
+            stderr=f"SKIP: {path.name}: {skip_reason}\n",
             duration_ms=0,
             skipped=True,
             skip_reason=skip_reason,
@@ -144,7 +153,7 @@ def run_all(validators_dir: Path, item: dict[str, Any] | None, cwd: Path) -> lis
 
 
 def summarize(results: list[ValidatorResult]) -> dict[str, int]:
-    out = {"pass": 0, "fail": 0, "warn": 0, "skip": 0}
+    out = {"pass": 0, "fail": 0, "warn": 0, "skip": 0, "error": 0}
     for r in results:
         out[r.status] += 1
     return out

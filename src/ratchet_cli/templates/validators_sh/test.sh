@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # ratchet validator: test
 #
-# Exit codes:  0 = pass, 2 = warning, anything else = fail
-#
-# Auto-detects common test runners. Replace with your project's exact command
-# for fastest feedback (e.g. `pytest -x tests/auth/` instead of full suite).
+# Exit codes:
+#   0  = pass (tests ran and passed)
+#   1  = fail
+#   2  = warning
+#   78 = skipped (no test runner detected — could not verify)
 
 set -u
 cd "${RATCHET_CWD:-$PWD}"
@@ -25,6 +26,6 @@ if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
   exec cargo test --quiet
 fi
 
-echo "test: no known test runner detected — treating as pass." >&2
-echo "edit .ratchet/validators/test.sh to wire your test command." >&2
-exit 0
+echo "SKIP: test: no test runner detected (pytest/npm-test/go-test/cargo-test)." >&2
+echo "SKIP: install one or edit .ratchet/validators/test.sh to wire your test command." >&2
+exit 78

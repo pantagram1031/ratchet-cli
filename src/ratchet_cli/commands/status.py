@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from ratchet_cli.state import (
@@ -10,9 +11,11 @@ from ratchet_cli.state import (
     Config,
     HISTORY_FILENAME,
     STATE_FILENAME,
+    VALIDATORS_DIRNAME,
     State,
     require_ratchet_dir,
 )
+from ratchet_cli.validators import discover
 
 
 def _tail_jsonl(path: Path, n: int) -> list[dict]:
@@ -48,7 +51,15 @@ def run(args: argparse.Namespace) -> int:
     else:
         print("  current: (none — run `ratchet next`)")
     print(f"  config:  require_all_pass={config.require_all_pass}, "
-          f"warning_blocks={config.warning_blocks}")
+          f"warning_blocks={config.warning_blocks}, allow_skipped={config.allow_skipped}")
+
+    discovered = discover(ratchet_dir / VALIDATORS_DIRNAME)
+    print(f"  validators: {len(discovered)} discovered in .ratchet/validators/")
+    if not discovered:
+        sys.stderr.write(
+            "WARN: no validators registered in .ratchet/validators/ — "
+            "submit will pass trivially.\n"
+        )
 
     submits = [r for r in _tail_jsonl(ratchet_dir / HISTORY_FILENAME, 200)
                if r.get("cmd") == "submit"]
@@ -63,6 +74,9 @@ def run(args: argparse.Namespace) -> int:
         for r in recent:
             mark = "✓" if r.get("passed") else "✗"
             s = r.get("summary", {})
-            print(f"    {mark} [{r.get('id')}] {r.get('text','')[:60]}"
-                  f"  ({s.get('pass',0)}p/{s.get('fail',0)}f/{s.get('warn',0)}w)")
+            counts = (
+                f"{s.get('pass',0)}p/{s.get('fail',0)}f/"
+                f"{s.get('warn',0)}w/{s.get('skip',0)}s/{s.get('error',0)}e"
+            )
+            print(f"    {mark} [{r.get('id')}] {r.get('text','')[:60]}  ({counts})")
     return 0

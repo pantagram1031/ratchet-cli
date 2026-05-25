@@ -1,10 +1,14 @@
 """ratchet validator: hurl (Python fallback).
 
-Runs all *.hurl files under tests/ (or $HURL_DIR). Hurl is the behavioral
-contract layer in Park Jun-woo's Reins Engineering — once a Hurl test passes,
-that observable HTTP behavior is locked.
+Exit codes:
+    0  = pass (all hurl tests passed)
+    1  = fail
+    2  = warning
+    78 = skipped (hurl not installed or no *.hurl files — could not verify)
 
-Install hurl: https://hurl.dev/
+Hurl is the behavioral contract layer in Park Jun-woo's Reins Engineering —
+once a Hurl test passes, that observable HTTP behavior is locked.
+Install: https://hurl.dev/
 """
 from __future__ import annotations
 
@@ -20,18 +24,19 @@ hurl_dir = Path(os.environ.get("HURL_DIR", "tests"))
 
 def main() -> int:
     if not shutil.which("hurl"):
-        print("hurl: not installed — skipping (install: https://hurl.dev)", file=sys.stderr)
-        return 0
+        print("SKIP: hurl: not installed (https://hurl.dev). Install to enable HTTP contract validation.", file=sys.stderr)
+        return 78
 
     search_root = cwd / hurl_dir if not hurl_dir.is_absolute() else hurl_dir
     if not search_root.exists():
-        print(f"hurl: directory {search_root} not found — treating as pass.", file=sys.stderr)
-        return 0
+        print(f"SKIP: hurl: directory {search_root} not found — could not verify.", file=sys.stderr)
+        return 78
 
     files = sorted(search_root.rglob("*.hurl"))
     if not files:
-        print(f"hurl: no *.hurl files under {search_root} — treating as pass.", file=sys.stderr)
-        return 0
+        print(f"SKIP: hurl: no *.hurl files under {search_root} — could not verify.", file=sys.stderr)
+        print("SKIP: write hurl tests under tests/ or set HURL_DIR=<path>.", file=sys.stderr)
+        return 78
 
     return subprocess.run(["hurl", "--test", *[str(f) for f in files]], cwd=str(cwd)).returncode
 
