@@ -81,6 +81,12 @@ work to completion under mechanical validation. The validators you write
 fill in the domain — `.ratchet/validators/` is where your project's specifics
 live. ratchet-cli itself stays small on purpose.
 
+This tool sits between codegen (e.g., yongol) and post-implementation review.
+For artifact-level inspection of AI-produced code, see also
+[NEKOWORK](https://github.com/Ps-Neko/NEKOWORK), an independently developed
+quality-gate tool that Park Jun-woo (@park_jun_woo) himself called
+"a textbook example of Reins Engineering."
+
 ## Drop into an existing project — three scenarios
 
 ### Python project (pytest + ruff)
