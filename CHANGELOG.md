@@ -42,6 +42,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Phase 4: `tests/test_basic.py` — unit tests for `state`, `validators`,
   and discovery rules.
 
+### Fixed (Phase 5 — e2e discoveries)
+
+- **Windows cp949 / cp1252 console crash on non-ASCII output.** `cli.main`
+  now reconfigures `sys.stdout` / `sys.stderr` to UTF-8 with `errors="replace"`
+  so that em-dashes, Korean item text, and other non-ASCII characters cannot
+  raise `UnicodeEncodeError` mid-command. Failing condition was reproducible
+  on Windows PowerShell with cp949 codepage.
+- **Built-in shell templates: broken existence checks.** `lint.sh` and
+  `test.sh` used `ls dir1 dir2 2>/dev/null | head -1 >/dev/null` to detect
+  presence of source files / test directories — but `head -1` always exits 0
+  on empty input, so the gate was always open. Now uses `compgen -G` for
+  glob existence and `[ -d tests ]` for directory existence. Without this
+  fix, `pytest` would run on projects with no `tests/` directory and return
+  exit 5 ("no tests collected"), classified as `error` — false-failure.
+
+### Changed (Phase 5 — false-pass closures)
+
+- **`submit` blocks when zero validators are discovered** (new config field
+  `require_validators: bool = True`, default true). Previously, an
+  empty `.ratchet/validators/` would let every `submit` pass trivially —
+  the exact false-ratchet pattern Reins Engineering exists to prevent.
+  Existing `config.json` files without this key load with the safe default.
+  Opt out with `require_validators: false` when a project legitimately uses
+  ratchet as a pure task queue.
+- **`history.jsonl` schema v2 (breaking, pre-1.0).** Each `ratchet submit`
+  now writes **one record per validator run** plus a final `submit_done`
+  summary record, all sharing a `submit_id` for correlation. Per-validator
+  records carry the user-requested fields: `ts`, `cmd`, `item`, `validator`,
+  `exit`, `stdout_tail` (plus `submit_id`, `item_id`, `item_index`, `status`,
+  `duration_ms`, `stderr_tail`). `status` now aggregates by reading
+  `submit_done` records; pre-fix history files render as "0 submits recorded".
+
 ### Changed
 
 - **Phase 3 (breaking, pre-1.0):** exit code regime tightened. `78` is now
