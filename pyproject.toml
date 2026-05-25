@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ratchet-cli"
+version = "0.1.0"
+description = "Deterministic ratchet for AI coding agents — a Reins Engineering CLI"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "pantagram1031", email = "pantagram1031@gmail.com" }]
+requires-python = ">=3.10"
+keywords = ["ratchet", "reins", "llm", "ai-coding", "validator", "vibe-coding"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = []
+
+[project.scripts]
+ratchet = "ratchet_cli.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/pantagram1031/ratchet-cli"
+Issues = "https://github.com/pantagram1031/ratchet-cli/issues"
+"Source — Reins Engineering" = "https://www.parkjunwoo.com/ko/opinion/reins-engineering/"
+"Source — Ratchet Pattern" = "https://www.parkjunwoo.com/ko/tech/ratchet-pattern/"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ratchet_cli*"]
+
+[tool.setuptools.package-data]
+ratchet_cli = ["templates/**/*", "templates/**/.*"]
